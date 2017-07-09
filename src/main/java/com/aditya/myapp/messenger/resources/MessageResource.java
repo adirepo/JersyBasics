@@ -27,7 +27,7 @@ public class MessageResource {
 	MessageService ms = new MessageService();
 	
 	@GET
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces(value = {MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public List<Message> getMessages(@BeanParam MessageFilterBean msb){
 		if(msb.getYear() > 0){
 			return ms.getMessagesForYear(msb.getYear());
@@ -69,11 +69,12 @@ public class MessageResource {
 	
 	@GET
 	@Path("/{messageId}")
-	@Produces(MediaType.APPLICATION_JSON)
+	@Produces(value = {MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public Message getMessage(@PathParam("messageId") long id, @Context UriInfo uriInfo){
 		Message message = ms.getMessage(id);
 		message = addSelfMessageUrl(uriInfo, message);
 		message = addProfileUrl(uriInfo, message);
+		message = addCommentsUrl(uriInfo, message);
 		return message;
 	}
 
@@ -93,6 +94,17 @@ public class MessageResource {
 	private Message addProfileUrl(UriInfo uriInfo, Message message) {
 		String url = uriInfo.getBaseUriBuilder().path(ProfileResource.class).path(message.getAuthor()).toString();
 		message.addLink(url, "profile");
+		return message;
+	}
+	
+	private Message addCommentsUrl(UriInfo uriInfo, Message message) {
+		String url = uriInfo
+		.getBaseUriBuilder()
+		.path(MessageResource.class, "manageComments")
+		.resolveTemplate("messageId", message.getId())
+		.build()
+		.toString();
+		message.addLink(url, "comments");
 		return message;
 	}
 }
